@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <title>Тряска печеньки</title>
+</head>
+
+
+<body class="flex h-svh py-auto bg-zinc-950 max-w-lg mx-auto">
+
+  <div class="my-auto text-white flex flex-col p-4">
+    <div class="text-xl mb-4 ">Печенька трясётся, если подвигать изображение</div>
+    <div class="camera-viewport w-full mx-auto overflow-hidden">
+      <img src="./oreo.jpg" id="oreo" class="w-[118%] h-[118%] min-w-full min-h-full object-cover"
+        alt="Oreo cookie shake demo" />
+    </div>
+
+    <div id="Слайдер" class=" mt-6">
+      <div class="text-xl mb-2">Магнитуда тряски</div>
+
+      <div class="bg-[oklch(0.145_0_0)] pt-2 px-2">
+        <div class="relative w-full group">
+          <input id="nativeRange" type="range" min="0" max="100" value="0"
+            class="peer absolute inset-0 w-full -mt-5 h-12 opacity-0 cursor-pointer z-10" />
+
+          <div class="h-1.5 w-full rounded-full bg-[oklch(0.269_0_0)]">
+            <div id="customRange" class="h-full rounded-full bg-[oklch(0.922_0_0)]" style="width: 0%;"></div>
+          </div>
+
+          <div id="customThumb"
+            class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-4 rounded-full bg-[oklch(0.922_0_0)]"
+            style="left: 0%;"></div>
+        </div>
+
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById("nativeRange");
+    const thumb = document.getElementById("customThumb");
+    const range = document.getElementById("customRange");
+    const img = document.getElementById("oreo");
+
+    // --- CONFIGURATION ---
+    const CONFIG = {
+      speed: 3,
+      xIntensity: 60,
+      yIntensity: 20,
+      rotationIntensity: 2,
+      baseScale: 1.15,
+
+      // NOISE OCTAVE SETTINGS
+      // Higher octaves = more detailed/jittery movement
+      // Persistence = how much each subsequent octave contributes (0.0 to 1.0)
+      // Lacunarity = how much the frequency increases per octave (usually ~2.0)
+      octaves: 4,
+      persistence: 0.7,
+      lacunarity: 1.7
+    };
+    // ------------------------------
+
+    function updateUI(val) {
+      const percent = ((val - input.min) / (input.max - input.min)) * 100;
+      thumb.style.left = percent + "%";
+      range.style.width = percent + "%";
+    }
+
+    input.addEventListener("input", e => updateUI(e.target.value));
+    updateUI(input.value);
+
+    // Simple deterministic hash
+    function hash(n) {
+      n = Math.sin(n) * 43758.5453123;
+      return n - Math.floor(n);
+    }
+
+    // Linear interpolation with smoothstep easing
+    function noise(t) {
+      let i = Math.floor(t);
+      let f = t - i;
+      let u = f * f * (3.0 - 2.0 * f);
+      return (1.0 - u) * hash(i) + u * hash(i + 1);
+    }
+
+    /**
+     * Generates layered noise (fBm)
+     * @param {number} t - Time input
+     * @param {number} offset - Offset to differentiate X, Y, and Rotation
+     */
+    function getOctaveNoise(t, offset) {
+      let total = 0;
+      let frequency = 1;
+      let amplitude = 1;
+      let maxValue = 0; // Used for normalizing the result
+
+      for (let i = 0; i < CONFIG.octaves; i++) {
+        total += noise((t + offset) * frequency) * amplitude;
+        maxValue += amplitude;
+        amplitude *= CONFIG.persistence;
+        frequency *= CONFIG.lacunarity;
+      }
+
+      // Returns a value roughly between -0.5 and 0.5
+      return (total / maxValue) - 0.5;
+    }
+
+    function shakeLoop() {
+      const raw = Number(input.value);
+      const mag = raw / 200;
+      const activeMag = mag + (raw > 0 ? 0.02 : 0);
+
+      // Global time scaled by speed
+      const t = (performance.now() * 0.001) * CONFIG.speed;
+
+      // Calculate layered noise for each axis
+      // Unique offsets (10, 20, 30) prevent the axes from moving in sync
+      const noiseX = getOctaveNoise(t * 0.8, 10);
+      const noiseY = getOctaveNoise(t * 0.7, 20);
+      const noiseR = getOctaveNoise(t * 0.5, 30);
+
+      // Apply intensities and magnitude
+      const tx = noiseX * CONFIG.xIntensity * activeMag;
+      const ty = noiseY * CONFIG.yIntensity * activeMag;
+      const tr = noiseR * CONFIG.rotationIntensity * activeMag;
+
+      img.style.transform = `
+      translate(${tx}px, ${ty}px) 
+      rotate(${tr}deg) 
+      scale(${CONFIG.baseScale})
+    `;
+
+      requestAnimationFrame(shakeLoop);
+    }
+
+    requestAnimationFrame(shakeLoop);
+  </script>
+
+</body>
+
+</html>
