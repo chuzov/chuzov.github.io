@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Meme</title>
+    <style>
+        @font-face {
+            font-family: "ImpactCustom";
+            src: url("./Impact.woff2");
+            font-display: swap;
+        }
+
+        body {
+            background: #353839;
+        }
+
+        .meme-text {
+            font-family: "ImpactCustom";
+            text-transform: uppercase;
+            color: #fff;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            text-shadow:
+                0.065em 0.065em 0 #000,
+                -0.065em -0.065em 0 #000,
+                0.065em -0.065em 0 #000,
+                -0.065em 0.065em 0 #000,
+                0 0.065em 0 #000,
+                0.065em 0 0 #000,
+                0 -0.065em 0 #000,
+                -0.065em 0 0 #000,
+                0.065em 0.065em 0.2em #000;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="relative w-full max-w-lg aspect-[5/5.6] bg-cover bg-center"
+        style="background-image: url('50cent.avif')">
+
+        <p class="meme-text absolute top-3 left-0 right-0 text-center px-3">
+            ты офигеешь, но он
+        </p>
+
+        <p id="bottom_text" class="meme-text absolute bottom-3 left-0 right-0 text-center px-3"></p>
+
+    </div>
+
+    <script>
+        fetch("https://open.er-api.com/v6/latest/USD")
+            .then(r => r.json())
+            .then(data => {
+                const rate = Math.round(data.rates.RUB * 5) / 10;
+                document.getElementById("bottom_text").textContent =
+                    "уже " + rate + " рублей";
+            });
+    </script>
+
+</body>
+
+</html>
