@@ -9,10 +9,12 @@
 </head>
 
 
-<body class="flex h-svh py-auto bg-zinc-950 max-w-lg mx-auto">
+<body class="flex h-svh py-auto bg-[#0f0503] max-w-lg mx-auto">
 
   <div class="my-auto text-white flex flex-col p-4">
-    <div class="text-xl mb-4 ">Печенька трясётся, если подвигать изображение</div>
+    <div class="text-xl mb-4 "><a class="underline text-blue-500 hover:text-blue-700 visited:text-purple-500"
+        href="https://www.reddit.com/r/pics/comments/7emyba/this_oreo_jiggles_if_you_stare_at_it_and_gently/">Печенька</a>
+      трясётся, если подвигать изображение</div>
     <div class="camera-viewport w-full mx-auto overflow-hidden">
       <img src="./oreo.jpg" id="oreo" class="w-[118%] h-[118%] min-w-full min-h-full object-cover"
         alt="Oreo cookie shake demo" />
@@ -21,7 +23,7 @@
     <div id="Слайдер" class=" mt-6">
       <div class="text-xl mb-2">Магнитуда тряски</div>
 
-      <div class="bg-[oklch(0.145_0_0)] pt-2 px-2">
+      <div class=" pt-2 px-2">
         <div class="relative w-full group">
           <input id="nativeRange" type="range" min="0" max="100" value="0"
             class="peer absolute inset-0 w-full -mt-5 h-12 opacity-0 cursor-pointer z-10" />
@@ -46,23 +48,16 @@
     const range = document.getElementById("customRange");
     const img = document.getElementById("oreo");
 
-    // --- CONFIGURATION ---
     const CONFIG = {
       speed: 3,
-      xIntensity: 60,
+      xIntensity: 80,
       yIntensity: 20,
-      rotationIntensity: 2,
+      rotationIntensity: 1.5,
       baseScale: 1.15,
-
-      // NOISE OCTAVE SETTINGS
-      // Higher octaves = more detailed/jittery movement
-      // Persistence = how much each subsequent octave contributes (0.0 to 1.0)
-      // Lacunarity = how much the frequency increases per octave (usually ~2.0)
       octaves: 4,
       persistence: 0.7,
       lacunarity: 1.7
     };
-    // ------------------------------
 
     function updateUI(val) {
       const percent = ((val - input.min) / (input.max - input.min)) * 100;
@@ -73,13 +68,11 @@
     input.addEventListener("input", e => updateUI(e.target.value));
     updateUI(input.value);
 
-    // Simple deterministic hash
     function hash(n) {
       n = Math.sin(n) * 43758.5453123;
       return n - Math.floor(n);
     }
 
-    // Linear interpolation with smoothstep easing
     function noise(t) {
       let i = Math.floor(t);
       let f = t - i;
@@ -87,16 +80,11 @@
       return (1.0 - u) * hash(i) + u * hash(i + 1);
     }
 
-    /**
-     * Generates layered noise (fBm)
-     * @param {number} t - Time input
-     * @param {number} offset - Offset to differentiate X, Y, and Rotation
-     */
     function getOctaveNoise(t, offset) {
       let total = 0;
       let frequency = 1;
       let amplitude = 1;
-      let maxValue = 0; // Used for normalizing the result
+      let maxValue = 0;
 
       for (let i = 0; i < CONFIG.octaves; i++) {
         total += noise((t + offset) * frequency) * amplitude;
@@ -105,7 +93,6 @@
         frequency *= CONFIG.lacunarity;
       }
 
-      // Returns a value roughly between -0.5 and 0.5
       return (total / maxValue) - 0.5;
     }
 
@@ -114,31 +101,28 @@
       const mag = raw / 200;
       const activeMag = mag + (raw > 0 ? 0.02 : 0);
 
-      // Global time scaled by speed
       const t = (performance.now() * 0.001) * CONFIG.speed;
 
-      // Calculate layered noise for each axis
-      // Unique offsets (10, 20, 30) prevent the axes from moving in sync
       const noiseX = getOctaveNoise(t * 0.8, 10);
       const noiseY = getOctaveNoise(t * 0.7, 20);
       const noiseR = getOctaveNoise(t * 0.5, 30);
 
-      // Apply intensities and magnitude
       const tx = noiseX * CONFIG.xIntensity * activeMag;
       const ty = noiseY * CONFIG.yIntensity * activeMag;
       const tr = noiseR * CONFIG.rotationIntensity * activeMag;
 
       img.style.transform = `
-      translate(${tx}px, ${ty}px) 
-      rotate(${tr}deg) 
+      translate(${tx}px, ${ty}px)
+      rotate(${tr}deg)
       scale(${CONFIG.baseScale})
     `;
-
-      requestAnimationFrame(shakeLoop);
     }
 
-    requestAnimationFrame(shakeLoop);
+    const FPS = 60;
+    const interval = 1000 / FPS;
+    setInterval(shakeLoop, interval);
   </script>
+
 
 </body>
 
